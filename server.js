@@ -22,7 +22,7 @@ const requestCounts = new Map();
 app.use((req, res, next) => {
     const ip = req.ip;
     const now = Date.now();
-    const windowMs = 60 * 1000; // دقيقة
+    const windowMs = 60 * 1000;
     const maxRequests = 30;
 
     if (!requestCounts.has(ip)) {
@@ -40,6 +40,15 @@ app.use((req, res, next) => {
     }
 
     next();
+});
+
+// ===== Health Check =====
+app.get('/health', (req, res) => {
+    res.status(200).json({
+        status: 'ok',
+        timestamp: new Date(),
+        uptime: process.uptime()
+    });
 });
 
 // ===== Routes =====
@@ -60,12 +69,17 @@ app.use((err, req, res, next) => {
 });
 
 // ===== Start Server =====
-app.listen(PORT, () => {
-    console.log(`
-    🏨 ========================================
-    🚀 السيرفر شغال على http://localhost:${PORT}
-    📡 API متاح على http://localhost:${PORT}/api/hotels
-    🌍 البيئة: ${process.env.NODE_ENV}
+if (process.env.VERCEL) {
+    // Vercel بيشغل السيرفر لوحده
+    module.exports = app;
+} else {
+    app.listen(PORT, () => {
+        console.log(`
     ========================================
-    `);
-});
+    السيرفر شغال على http://localhost:${PORT}
+    API متاح على http://localhost:${PORT}/api/hotels
+    البيئة: ${process.env.NODE_ENV || 'development'}
+    ========================================
+        `);
+    });
+}
